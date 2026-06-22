@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HU Poker — GTO Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -15,7 +15,8 @@
   --bg:#0a0908;--panel:#181210;--panel-2:#1f1714;
   --text:#cfc6b8;--dim:#8a8073;
   --danger:#c0533f;--danger-b:#e0654e;--good:#5a9e6f;
-  --card-h:76px;--card-w:52px;
+  --card-h:84px;--card-w:58px;
+  --timer-hero:#5db8d8; --timer-warn:#e7c989; --timer-danger:#e0654e;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
@@ -30,38 +31,69 @@ body{
 #mode-screen{
   position:fixed;inset:0;z-index:100;
   background:radial-gradient(circle at 50% 30%,#1a120c 0%,#050403 80%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
-  padding:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;padding:24px 20px;overflow-y:auto;
 }
-#mode-screen h1{
-  font-family:'Fraunces',serif;font-size:clamp(1.6rem,4vw,2.4rem);
+.mode-logo{
+  font-family:'Fraunces',serif;font-size:clamp(2rem,5vw,3rem);
   color:var(--gold-bright);letter-spacing:0.02em;text-align:center;
+  text-shadow:0 0 40px rgba(231,201,137,0.3);
+  margin-bottom:6px;line-height:1.1;
 }
-#mode-screen p{color:var(--dim);font-size:0.8rem;text-align:center;margin-top:-16px;}
-.mode-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:600px;}
+.mode-tagline{
+  color:var(--dim);font-size:0.78rem;text-align:center;
+  letter-spacing:0.1em;text-transform:uppercase;font-weight:600;
+  margin-bottom:32px;
+}
+.mode-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;max-width:560px;}
 .mode-card{
   background:linear-gradient(160deg,var(--panel),var(--panel-2));
-  border:1px solid rgba(255,255,255,0.08);border-radius:16px;
-  padding:20px 16px;cursor:pointer;text-align:center;
+  border:1.5px solid rgba(255,255,255,0.08);border-radius:18px;
+  padding:22px 18px 18px;cursor:pointer;text-align:center;
   transition:border-color 0.2s,transform 0.15s,box-shadow 0.2s;
+  display:flex;flex-direction:column;gap:6px;
 }
-.mode-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-.mode-card .ico{font-size:1.8rem;margin-bottom:8px;}
-.mode-card h3{font-size:0.85rem;font-weight:800;color:var(--ivory);margin-bottom:4px;}
-.mode-card p{font-size:0.7rem;color:var(--dim);line-height:1.4;}
+.mode-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,0.5);}
+.mode-card .ico{font-size:2rem;margin-bottom:4px;}
+.mode-card h3{font-size:0.88rem;font-weight:800;color:var(--ivory);letter-spacing:0.01em;}
+.mode-card p{font-size:0.71rem;color:var(--dim);line-height:1.5;}
 .mode-card .tag{
-  display:inline-block;margin-top:8px;font-size:0.6rem;font-weight:700;
+  display:inline-block;margin-top:6px;font-size:0.6rem;font-weight:700;
   letter-spacing:0.07em;text-transform:uppercase;
-  padding:3px 8px;border-radius:5px;
+  padding:4px 10px;border-radius:6px;
   background:rgba(201,168,106,0.12);color:var(--gold-bright);
   border:1px solid rgba(201,168,106,0.25);
 }
+.mode-version{color:rgba(138,128,115,0.5);font-size:0.6rem;text-align:center;margin-top:18px;letter-spacing:0.06em;}
 
-/* ===== BLIND LEVEL BANNER (mode 4) ===== */
+/* ===== NAME EDIT MODAL ===== */
+#name-modal{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.name-modal-inner{
+  background:linear-gradient(180deg,var(--panel),var(--panel-2));
+  border:1px solid rgba(201,168,106,0.28);border-radius:18px;
+  padding:28px 28px 24px;max-width:320px;width:100%;text-align:center;
+}
+.name-modal-inner h3{font-family:'Fraunces',serif;font-size:1.2rem;color:var(--gold-bright);margin-bottom:8px;}
+.name-modal-inner p{color:var(--dim);font-size:0.75rem;margin-bottom:16px;}
+.name-input{
+  width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);
+  border-radius:9px;padding:10px 14px;color:var(--ivory);font-size:0.9rem;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color 0.2s;text-align:center;
+}
+.name-input:focus{border-color:var(--gold-bright);}
+.name-modal-btns{display:flex;gap:10px;margin-top:16px;}
+.name-modal-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;border:none;}
+.nm-save{background:var(--hero);color:#062633;}
+.nm-cancel{background:rgba(255,255,255,0.06);color:var(--text);border:1px solid rgba(255,255,255,0.1)!important;}
+
+/* ===== BLIND LEVEL BANNER ===== */
 #blind-banner{
   background:rgba(192,83,63,0.18);border-bottom:1px solid rgba(192,83,63,0.3);
   text-align:center;font-size:0.68rem;font-weight:700;letter-spacing:0.07em;
-  text-transform:uppercase;color:#f1a796;padding:4px 0;
+  text-transform:uppercase;color:#f1a796;padding:5px 0;
   display:none;
 }
 
@@ -94,11 +126,11 @@ body{
 .btn-menu:hover{background:rgba(201,168,106,0.22);}
 .btn-restart{background:rgba(192,83,63,0.12);border-color:rgba(192,83,63,0.35);color:#f1a796;}
 .btn-restart:hover{background:rgba(192,83,63,0.25);}
+.btn-name{background:rgba(93,184,216,0.08);border-color:rgba(93,184,216,0.25);color:var(--hero);}
+.btn-name:hover{background:rgba(93,184,216,0.18);}
 
 /* ===== MAIN LAYOUT ===== */
-.main{
-  display:flex;gap:0;flex:1;overflow:hidden;min-height:0;
-}
+.main{display:flex;gap:0;flex:1;overflow:hidden;min-height:0;}
 
 /* ===== TABLE ===== */
 .table-wrap{
@@ -109,6 +141,24 @@ body{
   padding:10px 12px 8px;gap:6px;overflow:hidden;
 }
 
+/* ===== TIMER BAR ===== */
+.timer-wrap{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.timer-bar-bg{flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;}
+.timer-bar{height:100%;border-radius:3px;transition:width 1s linear,background 0.5s;background:var(--timer-hero);}
+.timer-num{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;min-width:22px;text-align:right;}
+.timer-num.warn{color:var(--timer-warn);}
+.timer-num.danger{color:var(--timer-danger);}
+.timebank-pills{display:flex;gap:3px;}
+.tb-pill{
+  font-size:0.56rem;font-weight:700;padding:2px 6px;border-radius:4px;
+  background:rgba(93,184,216,0.15);color:var(--hero);border:1px solid rgba(93,184,216,0.3);
+  cursor:pointer;transition:background 0.15s;white-space:nowrap;
+}
+.tb-pill:hover{background:rgba(93,184,216,0.28);}
+.tb-pill.used{background:rgba(255,255,255,0.04);color:var(--dim);border-color:rgba(255,255,255,0.08);cursor:default;}
+.tb-pill.ai-tb{background:rgba(217,122,94,0.15);color:var(--ai);border-color:rgba(217,122,94,0.3);cursor:default;}
+.tb-pill.ai-tb.used{background:rgba(255,255,255,0.04);color:var(--dim);border-color:rgba(255,255,255,0.08);}
+
 /* ===== SEAT ROWS ===== */
 .seat-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;}
 .seat-row.ai-row{align-items:flex-start;}
@@ -116,7 +166,7 @@ body{
 
 .seat-panel{
   background:rgba(6,8,7,0.75);backdrop-filter:blur(4px);border-radius:12px;
-  padding:7px 12px;width:200px;
+  padding:7px 12px;width:220px;
   border:1.5px solid rgba(255,255,255,0.08);
   transition:border-color 0.25s,box-shadow 0.25s;
 }
@@ -152,23 +202,23 @@ body{
 /* ===== CARDS ===== */
 .card-area{display:flex;gap:6px;align-items:center;min-height:var(--card-h);}
 .card{
-  width:var(--card-w);height:var(--card-h);border-radius:7px;
+  width:var(--card-w);height:var(--card-h);border-radius:8px;
   background:linear-gradient(160deg,#fffdf8,var(--ivory));
-  box-shadow:0 3px 8px rgba(0,0,0,0.35),inset 0 0 0 1px rgba(0,0,0,0.06);
+  box-shadow:0 3px 10px rgba(0,0,0,0.4),inset 0 0 0 1px rgba(0,0,0,0.06);
   display:flex;flex-direction:column;justify-content:space-between;
   padding:4px 5px;flex-shrink:0;
-  animation:di 0.28s cubic-bezier(.2,.8,.3,1.1) both;
+  animation:di 0.3s cubic-bezier(.2,.8,.3,1.1) both;
 }
-@keyframes di{from{opacity:0;transform:translateY(-10px) scale(0.86);}to{opacity:1;transform:none;}}
-.card .r{font-size:0.8rem;font-weight:800;line-height:1;}
-.card .s{font-size:1.2rem;text-align:center;line-height:1;}
+@keyframes di{from{opacity:0;transform:translateY(-12px) scale(0.84);}to{opacity:1;transform:none;}}
+.card .r{font-size:0.88rem;font-weight:800;line-height:1;}
+.card .s{font-size:1.3rem;text-align:center;line-height:1;}
 .card .rb{align-self:flex-end;transform:rotate(180deg);}
 .card.back{
   background:repeating-linear-gradient(135deg,var(--rail) 0 5px,#241c14 5px 10px);
   border:2px solid var(--gold);
   display:flex;align-items:center;justify-content:center;
 }
-.card.back::after{content:"";width:20px;height:20px;border:1.5px solid rgba(201,168,106,0.5);border-radius:50%;}
+.card.back::after{content:"";width:22px;height:22px;border:1.5px solid rgba(201,168,106,0.5);border-radius:50%;}
 .card.ph{background:rgba(0,0,0,0.15);border:2px dashed rgba(255,255,255,0.1);box-shadow:none;}
 .red{color:#b32d2d;}.black{color:#1c1712;}
 
@@ -187,7 +237,6 @@ body{
 .pot-bb{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:rgba(231,201,137,0.5);}
 .board{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center;}
 
-/* all-in runout label */
 .runout-label{
   font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
   color:var(--gold-bright);background:rgba(201,168,106,0.1);
@@ -206,7 +255,7 @@ body{
   font-family:'Fraunces',serif;
 }
 
-/* ===== ACTION DOCK ===== */
+/* ===== ACTION DOCK — MOBILE SCROLL FRIENDLY ===== */
 .dock{
   background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);
   border-top:1px solid rgba(255,255,255,0.06);
@@ -232,17 +281,17 @@ body{
 .sread .val{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--gold-bright);}
 .sread .bb{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--dim);}
 input[type=range]{
-  -webkit-appearance:none;flex:1;min-width:100px;height:5px;border-radius:4px;
+  -webkit-appearance:none;flex:1;min-width:80px;height:5px;border-radius:4px;
   background:linear-gradient(to right,var(--gold) 0%,var(--gold) var(--fill,50%),rgba(255,255,255,0.12) var(--fill,50%));
   cursor:pointer;
 }
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 0 3px rgba(0,0,0,0.3),0 2px 5px rgba(0,0,0,0.4);cursor:pointer;}
-input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;border:none;background:var(--gold-bright);cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 0 3px rgba(0,0,0,0.3),0 2px 5px rgba(0,0,0,0.4);cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;border:none;background:var(--gold-bright);cursor:pointer;}
 input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
-.quick-bets{display:flex;gap:5px;flex-wrap:wrap;}
+.quick-bets{display:flex;gap:5px;flex-wrap:wrap;width:100%;}
 .qbtn{
   font-size:0.62rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
-  padding:6px 9px;border-radius:7px;
+  padding:7px 9px;border-radius:7px;
   background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
   color:var(--text);cursor:pointer;transition:background 0.15s;white-space:nowrap;
 }
@@ -252,7 +301,7 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
 
 .action-grid{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px;}
 .act-btn{
-  border:none;border-radius:11px;padding:12px 8px;font-weight:800;font-size:0.9rem;
+  border:none;border-radius:11px;padding:13px 8px;font-weight:800;font-size:0.9rem;
   letter-spacing:0.02em;cursor:pointer;color:white;
   display:flex;flex-direction:column;align-items:center;gap:1px;
   transition:transform 0.08s,filter 0.15s,box-shadow 0.15s;
@@ -310,32 +359,43 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
 .toast-card button:hover{filter:brightness(1.1);}
 .hidden{display:none!important;}
 
-/* ===== HAND COUNT INDICATOR (mode 3) ===== */
+/* ===== HAND COUNT INDICATOR ===== */
 #hand-progress{
   height:3px;background:rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;
   display:none;
 }
 #hand-progress-bar{height:100%;background:var(--hero);transition:width 0.4s ease;}
 
-/* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE MOBILE ===== */
 @media(max-width:720px){
-  :root{--card-h:66px;--card-w:46px;}
+  :root{--card-h:62px;--card-w:42px;}
   .log-panel{display:none;}
-  .seat-panel{width:170px;}
-  .stack-amt{font-size:0.95rem;}
+  .seat-panel{width:160px;}
+  .stack-amt{font-size:0.9rem;}
+  /* Dock scrollable on mobile */
+  .dock{
+    overflow-y:auto;max-height:200px;
+    padding-bottom:env(safe-area-inset-bottom,8px);
+  }
   .action-grid{gap:6px;}
-  .act-btn{padding:10px 6px;font-size:0.82rem;}
-  .quick-bets .qbtn{padding:5px 7px;font-size:0.58rem;}
-  .mode-grid{grid-template-columns:1fr 1fr;}
+  .act-btn{padding:11px 6px;font-size:0.82rem;}
+  .quick-bets .qbtn{padding:6px 7px;font-size:0.58rem;}
+  .sizing-row{padding:8px 10px;}
+  .sread .val{font-size:0.88rem;}
+  .top-meta .pill.mode-pill{display:none;}
+  /* Compact timer on mobile */
+  .timer-wrap{gap:4px;}
+  .timebank-pills .tb-pill{padding:1px 5px;font-size:0.52rem;}
 }
 @media(max-width:480px){
-  :root{--card-h:58px;--card-w:40px;}
-  .seat-panel{width:150px;}
-  .stack-amt{font-size:0.85rem;}
-  .topbar{padding:4px 10px;}
-  .top-meta{gap:4px;}
-  .pill{padding:3px 6px;font-size:0.58rem;}
-  .mode-grid{grid-template-columns:1fr;}
+  :root{--card-h:54px;--card-w:37px;}
+  .seat-panel{width:140px;}
+  .stack-amt{font-size:0.8rem;}
+  .topbar{padding:4px 8px;}
+  .top-meta{gap:3px;}
+  .pill{padding:3px 6px;font-size:0.56rem;}
+  .bet-line{font-size:0.62rem;}
+  .mode-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
@@ -343,20 +403,20 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
 
 <!-- MODE SELECT -->
 <div id="mode-screen">
-  <h1>♠ HU Poker — GTO Engine</h1>
-  <p>Select a game format to begin</p>
+  <div class="mode-logo">♠ HU Poker</div>
+  <div class="mode-tagline">GTO Engine — Select a format</div>
   <div class="mode-grid">
     <div class="mode-card" onclick="startMode(1)">
       <div class="ico">🎯</div>
       <h3>Classic 100BB</h3>
-      <p>Standard deep stack heads-up. 150,000 starting stacks at $500/$1,000 blinds.</p>
-      <div class="tag">100 BB · Unlimited Hands</div>
+      <p>Standard heads-up at 100BB deep. The purest GTO format.</p>
+      <div class="tag">100 BB · Unlimited</div>
     </div>
     <div class="mode-card" onclick="startMode(2)">
       <div class="ico">🏆</div>
       <h3>Deep Stack 150BB</h3>
-      <p>Full 150BB starting stacks — complex postflop spots and full GTO tree.</p>
-      <div class="tag">150 BB · Unlimited Hands</div>
+      <p>Full 150BB stacks — complex postflop trees and full GTO range.</p>
+      <div class="tag">150 BB · Unlimited</div>
     </div>
     <div class="mode-card" onclick="startMode(3)">
       <div class="ico">🕐</div>
@@ -367,8 +427,22 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
     <div class="mode-card" onclick="startMode(4)">
       <div class="ico">⚡</div>
       <h3>Turbo Escalating</h3>
-      <p>200BB start. Blinds double every 10 hands — survival is the game.</p>
-      <div class="tag">200 BB · Escalating Blinds</div>
+      <p>200BB start. Blinds double every 10 hands — adapt or bust.</p>
+      <div class="tag">200 BB · Escalating</div>
+    </div>
+  </div>
+  <div class="mode-version">v2.0 · GTO HU Engine</div>
+</div>
+
+<!-- AI NAME EDIT MODAL -->
+<div id="name-modal" class="hidden">
+  <div class="name-modal-inner">
+    <h3>Name Your Opponent</h3>
+    <p>Give the AI a custom name for this session</p>
+    <input id="ai-name-input" class="name-input" type="text" maxlength="20" placeholder="AI Opponent">
+    <div class="name-modal-btns">
+      <button class="nm-cancel" onclick="closeNameModal()">Cancel</button>
+      <button class="nm-save" onclick="saveAiName()">Save</button>
     </div>
   </div>
 </div>
@@ -376,7 +450,7 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
 <!-- BLIND ESCALATION BANNER -->
 <div id="blind-banner">Level <span id="blind-level">1</span> — Blinds <span id="blind-level-amt">$500/$1,000</span></div>
 
-<!-- HAND PROGRESS BAR (mode 3) -->
+<!-- HAND PROGRESS BAR -->
 <div id="hand-progress"><div id="hand-progress-bar" style="width:0%"></div></div>
 
 <!-- TOP BAR -->
@@ -390,6 +464,7 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
     <span class="pill" id="hand-counter-pill">Hand 1</span>
     <span class="pill" id="dealer-pill">Dealer —</span>
     <span class="pill mode-pill" id="mode-name-pill"></span>
+    <button class="btn-sm btn-name" onclick="openNameModal()">✏ Name</button>
     <button class="btn-sm btn-menu" onclick="showModeScreen()">Modes</button>
     <button class="btn-sm btn-restart" onclick="restartCurrentMode()">Restart</button>
   </div>
@@ -404,7 +479,7 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
       <div id="ai-dpuck" class="dpuck hidden">D</div>
       <div id="ai-panel" class="seat-panel ai-panel">
         <div class="seat-head">
-          <span class="seat-name">AI Opponent</span>
+          <span class="seat-name" id="ai-seat-name">AI Opponent</span>
           <span id="ai-tag" class="seat-tag hidden"></span>
         </div>
         <div class="stack-row">
@@ -413,6 +488,12 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
         </div>
         <div id="ai-bet-line" class="bet-line"><span class="bet-dot"></span><span id="ai-bet-txt">—</span></div>
         <div id="ai-status" class="seat-status"></div>
+        <!-- AI Timer -->
+        <div class="timer-wrap" id="ai-timer-wrap" style="display:none">
+          <div class="timer-bar-bg"><div id="ai-timer-bar" class="timer-bar" style="width:100%;background:var(--ai)"></div></div>
+          <span id="ai-timer-num" class="timer-num" style="color:var(--ai)">15</span>
+          <div class="timebank-pills" id="ai-timebank"></div>
+        </div>
       </div>
       <div id="ai-cards" class="card-area"></div>
     </div>
@@ -442,6 +523,12 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
           <span id="player-stack-bb" class="stack-bb">150BB</span>
         </div>
         <div id="player-bet-line" class="bet-line"><span class="bet-dot"></span><span id="player-bet-txt">—</span></div>
+        <!-- Player Timer -->
+        <div class="timer-wrap" id="player-timer-wrap" style="display:none">
+          <div class="timer-bar-bg"><div id="player-timer-bar" class="timer-bar" style="width:100%"></div></div>
+          <span id="player-timer-num" class="timer-num">15</span>
+          <div class="timebank-pills" id="player-timebank"></div>
+        </div>
       </div>
       <div id="player-dpuck" class="dpuck hidden">D</div>
     </div>
@@ -470,13 +557,13 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
     </div>
     <input type="range" id="raise-slider" min="0" max="100" value="0" oninput="updateSlider(this.value)">
     <div class="quick-bets">
-      <button class="qbtn" onclick="setSize(0.25)">1/4</button>
-      <button class="qbtn" onclick="setSize(0.33)">1/3</button>
-      <button class="qbtn" onclick="setSize(0.5)">1/2</button>
-      <button class="qbtn" onclick="setSize(0.75)">3/4</button>
+      <button class="qbtn" onclick="setSize(0.25)">¼ Pot</button>
+      <button class="qbtn" onclick="setSize(0.33)">⅓ Pot</button>
+      <button class="qbtn" onclick="setSize(0.5)">½ Pot</button>
+      <button class="qbtn" onclick="setSize(0.75)">¾ Pot</button>
       <button class="qbtn" onclick="setSize(1)">Pot</button>
-      <button class="qbtn" onclick="setSize(1.5)">1.5x</button>
-      <button class="qbtn allin" onclick="setSize(999)">All-in</button>
+      <button class="qbtn" onclick="setSize(1.5)">1.5×</button>
+      <button class="qbtn allin" onclick="setSize(999)">All-In</button>
     </div>
   </div>
   <div class="action-grid">
@@ -493,7 +580,7 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
     <p id="mo-sub">—</p>
     <div class="score-row">
       <div class="score-block"><div id="mo-you" class="sv">—</div><div class="sl">You</div></div>
-      <div class="score-block"><div id="mo-ai" class="sv">—</div><div class="sl">AI</div></div>
+      <div class="score-block"><div id="mo-ai" class="sv">—</div><div class="sl" id="mo-ai-label">AI</div></div>
     </div>
     <button onclick="restartCurrentMode()">Play Again</button>
   </div>
@@ -505,21 +592,117 @@ input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
 // ============================================================
 const BB_VAL = 1000;
 const SB_VAL = 500;
+const TIMER_SECONDS = 15;
+const TIMEBANK_COUNT = 5;
+const TIMEBANK_BONUS = 15;
+const STREET_DEAL_DELAY = 3000; // 3 second delay for community cards
 
 const MODES = {
-  1:{ label:'100BB Classic', startStack:100*BB_VAL, maxHands:0, escalate:false },
-  2:{ label:'150BB Deep',    startStack:150*BB_VAL, maxHands:0, escalate:false },
-  3:{ label:'100-Hand Sprint', startStack:200*BB_VAL, maxHands:100, escalate:false },
+  1:{ label:'100BB Classic',    startStack:100*BB_VAL, maxHands:0, escalate:false },
+  2:{ label:'150BB Deep',       startStack:150*BB_VAL, maxHands:0, escalate:false },
+  3:{ label:'100-Hand Sprint',  startStack:200*BB_VAL, maxHands:100, escalate:false },
   4:{ label:'Turbo Escalating', startStack:200*BB_VAL, maxHands:0, escalate:true }
 };
 
 const SUITS = { H:{c:'♥',cl:'red'}, D:{c:'♦',cl:'red'}, C:{c:'♣',cl:'black'}, S:{c:'♠',cl:'black'} };
 const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 
+let aiName = 'AI Opponent';
+
 function fc(v){ return '$'+Math.round(v).toLocaleString(); }
-function fbb(v){
-  const b=v/BB_VAL, r=Math.round(b*10)/10;
-  return (r%1===0?r.toFixed(0):r.toFixed(1))+'BB';
+function fbb(v,bbVal){
+  const bbv = bbVal || G.currentBB || BB_VAL;
+  const b = v / bbv;
+  const r = Math.round(b*10)/10;
+  return (r%1===0 ? r.toFixed(0) : r.toFixed(1))+'BB';
+}
+
+// ============================================================
+// TIMER SYSTEM
+// ============================================================
+let timerInterval = null;
+let timerSecondsLeft = TIMER_SECONDS;
+let timerTarget = 0; // 0=player, 1=ai
+
+let playerTimebank = TIMEBANK_COUNT;
+let aiTimebank = TIMEBANK_COUNT;
+let timerRunning = false;
+
+function renderTimebankPills(el, count, isAi, used, onUse){
+  el.innerHTML='';
+  for(let i=0;i<TIMEBANK_COUNT;i++){
+    const pip = document.createElement('button');
+    pip.className='tb-pill'+(isAi?' ai-tb':'')+(i>=count?' used':'');
+    pip.innerText='⏱';
+    pip.title= i<count ? 'Use Timebank (+15s)' : 'Used';
+    pip.disabled = i>=count || isAi;
+    if(!isAi && i<count) pip.onclick=onUse;
+    el.appendChild(pip);
+  }
+}
+
+function updateTimerUI(who, secs, maxSecs){
+  const pct = Math.max(0, secs/maxSecs*100);
+  const bar = document.getElementById(who+'-timer-bar');
+  const num = document.getElementById(who+'-timer-num');
+  if(!bar||!num) return;
+  bar.style.width = pct+'%';
+  bar.style.background = secs>8 ? (who==='player'?'var(--timer-hero)':'var(--ai)') : secs>4 ? 'var(--timer-warn)' : 'var(--timer-danger)';
+  num.innerText = secs;
+  num.className = 'timer-num'+(secs<=4?' danger':secs<=8?' warn':'');
+}
+
+function startTimer(who, onTimeout){
+  clearTimer();
+  const isAi = who==='ai';
+  timerTarget = isAi ? 1 : 0;
+  timerSecondsLeft = TIMER_SECONDS;
+  timerRunning = true;
+
+  const wrapId = who+'-timer-wrap';
+  document.getElementById(wrapId).style.display='flex';
+  updateTimerUI(who, timerSecondsLeft, TIMER_SECONDS);
+
+  // Render timebank pills
+  const tbEl = document.getElementById(who+'-timebank');
+  if(isAi){
+    renderTimebankPills(tbEl, aiTimebank, true);
+  } else {
+    renderTimebankPills(tbEl, playerTimebank, false, playerTimebank<TIMEBANK_COUNT, ()=>{
+      if(playerTimebank>0){
+        playerTimebank--;
+        timerSecondsLeft += TIMEBANK_BONUS;
+        renderTimebankPills(tbEl, playerTimebank, false, true, ()=>{});
+        updateTimerUI(who, timerSecondsLeft, TIMER_SECONDS+TIMEBANK_BONUS*((TIMEBANK_COUNT-playerTimebank)));
+      }
+    });
+  }
+
+  timerInterval = setInterval(()=>{
+    timerSecondsLeft--;
+    const maxSecs = TIMER_SECONDS + TIMEBANK_BONUS*(isAi ? (TIMEBANK_COUNT-aiTimebank) : (TIMEBANK_COUNT-playerTimebank));
+    updateTimerUI(who, timerSecondsLeft, maxSecs);
+    if(timerSecondsLeft<=0){
+      clearTimer();
+      document.getElementById(wrapId).style.display='none';
+      if(onTimeout) onTimeout();
+    }
+  }, 1000);
+}
+
+function clearTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+  timerRunning=false;
+  document.getElementById('player-timer-wrap').style.display='none';
+  document.getElementById('ai-timer-wrap').style.display='none';
+}
+
+// AI uses timebank randomly
+function aiTimebankThink(){
+  if(aiTimebank>0 && Math.random()<0.2){
+    aiTimebank--;
+    timerSecondsLeft += TIMEBANK_BONUS;
+  }
 }
 
 // ============================================================
@@ -533,28 +716,28 @@ function initGame(mode){
   const cfg = MODES[mode];
   const ss = cfg.startStack;
   G = {
-    mode: mode,
-    playerChips: ss, aiChips: ss,
-    handNumber: 1,
-    deck:[], playerCards:[], aiCards:[], communityCards:[],
+    mode, playerChips:ss, aiChips:ss,
+    handNumber:1, deck:[], playerCards:[], aiCards:[], communityCards:[],
     pot:0, playerBet:0, aiBet:0,
     currentStreet:'PREFLOP',
     dealerButton: Math.random()<0.5?0:1,
     currentTurn:0,
-    lastRaiseInc: BB_VAL,
-    isHandActive: false,
-    playerActed: false, aiActed: false,
-    matchOver: false,
-    handCount: 0,
-    currentBB: BB_VAL,
-    currentSB: SB_VAL,
-    blindLevel: 1,
-    allInRunout: false  // NEW: tracks if we're in all-in runout mode
+    lastRaiseInc:BB_VAL,
+    isHandActive:false,
+    playerActed:false, aiActed:false,
+    matchOver:false,
+    handCount:0,
+    currentBB:BB_VAL,
+    currentSB:SB_VAL,
+    blindLevel:1,
+    allInRunout:false
   };
+  playerTimebank = TIMEBANK_COUNT;
+  aiTimebank = TIMEBANK_COUNT;
 }
 
 // ============================================================
-// BLIND LEVELS (mode 4)
+// BLIND LEVELS
 // ============================================================
 const BLIND_LEVELS = [
   {h:1,  sb:500,    bb:1000},
@@ -586,7 +769,7 @@ function buildDeck(){
   return d;
 }
 function shuffle(d){
-  for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
 }
 
 // ============================================================
@@ -612,92 +795,122 @@ function startNewHand(){
   document.getElementById('winner-banner').style.display='none';
   document.getElementById('runout-label').style.display='none';
 
-  // Preflop: button/SB acts first (HU rules)
+  // HU preflop: BTN/SB acts first preflop
   if(G.dealerButton===0){
     G.playerBet=SB; G.aiBet=BB;
     G.playerChips-=Math.min(SB,G.playerChips);
     G.aiChips-=Math.min(BB,G.aiChips);
     G.currentTurn=0;
-    logLine('sys','You are Button/SB. You act first preflop.');
+    logLine('sys','You are BTN/SB. You act first preflop.');
   } else {
     G.playerBet=BB; G.aiBet=SB;
     G.playerChips-=Math.min(BB,G.playerChips);
     G.aiChips-=Math.min(SB,G.aiChips);
     G.currentTurn=1;
-    logLine('sys','AI is Button/SB. AI acts first preflop.');
+    logLine('sys',aiName+' is BTN/SB. AI acts first preflop.');
   }
   G.pot=G.playerBet+G.aiBet;
 
-  // Progress bar
   if(G.mode===3){
     document.getElementById('hand-progress').style.display='block';
     document.getElementById('hand-progress-bar').style.width=(G.handCount/100*100)+'%';
   }
 
   updateUI();
-  if(G.currentTurn===1) setTimeout(aiThink,900);
+
+  if(G.currentTurn===1){
+    setTimeout(aiThink,900);
+  } else {
+    // Player's turn — start timer
+    startTimer('player', ()=>{ if(G.isHandActive&&G.currentTurn===0) playerAct('FOLD'); });
+  }
 }
 
 function advanceStreet(){
+  clearTimer();
   G.playerBet=0; G.aiBet=0; G.lastRaiseInc=G.currentBB;
   G.playerActed=false; G.aiActed=false;
 
+  const dealDelay = STREET_DEAL_DELAY; // 3 second delay before dealing community
+
   if(G.currentStreet==='PREFLOP'){
-    G.currentStreet='FLOP';
-    G.communityCards.push(G.deck.pop(),G.deck.pop(),G.deck.pop());
-    logStreet('FLOP');
+    setTimeout(()=>{
+      G.currentStreet='FLOP';
+      G.communityCards.push(G.deck.pop(),G.deck.pop(),G.deck.pop());
+      logStreet('FLOP');
+      afterStreetDeal();
+    }, dealDelay);
   } else if(G.currentStreet==='FLOP'){
-    G.currentStreet='TURN';
-    G.communityCards.push(G.deck.pop());
-    logStreet('TURN');
+    setTimeout(()=>{
+      G.currentStreet='TURN';
+      G.communityCards.push(G.deck.pop());
+      logStreet('TURN');
+      afterStreetDeal();
+    }, dealDelay);
   } else if(G.currentStreet==='TURN'){
-    G.currentStreet='RIVER';
-    G.communityCards.push(G.deck.pop());
-    logStreet('RIVER');
+    setTimeout(()=>{
+      G.currentStreet='RIVER';
+      G.communityCards.push(G.deck.pop());
+      logStreet('RIVER');
+      afterStreetDeal();
+    }, dealDelay);
   } else if(G.currentStreet==='RIVER'){
     G.currentStreet='SHOWDOWN';
     updateUI();
-    setTimeout(handleShowdown,700);
+    setTimeout(handleShowdown, 700);
     return;
   }
-
   updateUI();
+}
 
-  // ALL-IN RUNOUT: if either player is all-in, just run out the board
+function afterStreetDeal(){
+  updateUI();
   const allIn=(G.playerChips===0||G.aiChips===0);
-  if(allIn && G.isHandActive){
+  if(allIn&&G.isHandActive){
     G.allInRunout=true;
     document.getElementById('runout-label').style.display='block';
-    setTimeout(advanceStreet,900);
+    setTimeout(advanceStreet, 900);
     return;
   }
-
-  // Normal: postflop OOP acts first (non-button)
+  // Postflop OOP acts first
   G.currentTurn=(G.dealerButton===0)?1:0;
   updateUI();
-  if(G.currentTurn===1) setTimeout(aiThink,900);
+  if(G.currentTurn===1){
+    setTimeout(aiThink,900);
+  } else {
+    startTimer('player', ()=>{ if(G.isHandActive&&G.currentTurn===0) playerAct('CHECK_FOLD'); });
+  }
 }
 
 function executeAction(actor,type,amount){
-  const name=actor===0?'You':'AI';
+  clearTimer();
+  const name=actor===0?'You':aiName;
   const facing=actor===0?(G.aiBet-G.playerBet):(G.playerBet-G.aiBet);
 
   if(actor===0) G.playerActed=true;
   if(actor===1) G.aiActed=true;
 
-  if(type==='FOLD'){
-    logLine('fold',name+' folds.');
-    if(actor===0) G.aiChips+=G.pot; else G.playerChips+=G.pot;
-    G.isHandActive=false; G.pot=0;
-    updateUI(); endHand(); return;
+  if(type==='FOLD'||type==='CHECK_FOLD'){
+    const actualType = (type==='CHECK_FOLD' && facing<=0) ? 'CHECK' : 'FOLD';
+    if(actualType==='CHECK'){
+      logLine('',name+' checks (time).');
+      if(actor===1) document.getElementById('ai-status').innerText='Checked';
+      // proceed as check
+      type='CALL';
+    } else {
+      logLine('fold',name+' folds'+(type==='CHECK_FOLD'?' (time)':'')+'.');
+      if(actor===0) G.aiChips+=G.pot; else G.playerChips+=G.pot;
+      G.isHandActive=false; G.pot=0;
+      updateUI(); endHand(); return;
+    }
   }
 
   if(type==='CALL'){
     if(facing>0){
       const stack=actor===0?G.playerChips:G.aiChips;
       const ca=Math.min(facing,stack);
-      if(actor===0){ G.playerChips-=ca; G.playerBet+=ca; }
-      else { G.aiChips-=ca; G.aiBet+=ca; }
+      if(actor===0){G.playerChips-=ca;G.playerBet+=ca;}
+      else{G.aiChips-=ca;G.aiBet+=ca;}
       G.pot+=ca;
       logLine('',name+' calls '+fc(ca)+'.');
       if(actor===1) document.getElementById('ai-status').innerText='Called';
@@ -731,17 +944,17 @@ function executeAction(actor,type,amount){
   const bothActed=G.playerActed&&G.aiActed;
 
   if(allIn||(betsMatch&&bothActed)){
-    // If all-in situation where one player called, need to equalize bets first
-    if(allIn && !betsMatch){
-      // Someone is all-in with mismatched bets — equalize (one called all-in, pot is sum of both bets)
-      // Already handled since executeAction puts remaining chips in
-    }
     advanceStreet(); return;
   }
 
   G.currentTurn=actor===0?1:0;
   updateUI();
-  if(G.currentTurn===1) setTimeout(aiThink,850);
+  if(G.currentTurn===1){
+    setTimeout(aiThink,850);
+  } else {
+    const facing2 = G.aiBet-G.playerBet;
+    startTimer('player', ()=>{ if(G.isHandActive&&G.currentTurn===0) playerAct(facing2>0?'FOLD':'CHECK_FOLD'); });
+  }
 }
 
 window.playerAct=function(type){
@@ -755,8 +968,8 @@ function handleShowdown(){
   const pe=eval7(G.playerCards,G.communityCards);
   const ae=eval7(G.aiCards,G.communityCards);
   logStreet('SHOWDOWN');
-  logLine('',`You: <b>${descCards(G.playerCards)}</b> — ${pe.name}`);
-  logLine('',`AI: <b>${descCards(G.aiCards)}</b> — ${ae.name}`);
+  logLine('','You: <b>'+descCards(G.playerCards)+'</b> — '+pe.name);
+  logLine('',aiName+': <b>'+descCards(G.aiCards)+'</b> — '+ae.name);
 
   let winMsg='';
   if(pe.score>ae.score){
@@ -764,9 +977,9 @@ function handleShowdown(){
     G.playerChips+=G.pot;
     winMsg='You win '+fc(G.pot)+'!';
   } else if(ae.score>pe.score){
-    logLine('lose','AI wins '+fc(G.pot)+'.');
+    logLine('lose',aiName+' wins '+fc(G.pot)+'.');
     G.aiChips+=G.pot;
-    winMsg='AI wins '+fc(G.pot);
+    winMsg=aiName+' wins '+fc(G.pot);
   } else {
     logLine('split','Split pot — '+fc(Math.floor(G.pot/2))+' each.');
     G.playerChips+=Math.floor(G.pot/2);
@@ -777,7 +990,7 @@ function handleShowdown(){
   G.pot=0; G.isHandActive=false;
   const wb=document.getElementById('winner-banner');
   wb.innerText=winMsg; wb.style.display='block';
-  setTimeout(()=>{ wb.style.display='none'; },2200);
+  setTimeout(()=>{wb.style.display='none';},2200);
 
   updateUI(); endHand();
 }
@@ -792,17 +1005,19 @@ function endHand(){
 
 function showMatchOver(reason){
   G.matchOver=true;
+  clearTimer();
   const title=document.getElementById('mo-title');
   const sub=document.getElementById('mo-sub');
   document.getElementById('mo-you').innerText=fc(G.playerChips);
   document.getElementById('mo-ai').innerText=fc(G.aiChips);
+  document.getElementById('mo-ai-label').innerText=aiName;
   if(reason==='hands'){
     title.innerText='100 Hands Complete';
-    sub.innerText=G.playerChips>G.aiChips?'You win the sprint! 🏆':'AI wins the sprint.';
+    sub.innerText=G.playerChips>G.aiChips?'You win the sprint! 🏆':aiName+' wins the sprint.';
   } else if(G.playerChips>0){
-    title.innerText='You Win!'; sub.innerText='Opponent busted out.';
+    title.innerText='You Win!'; sub.innerText=aiName+' busted out.';
   } else {
-    title.innerText='AI Wins'; sub.innerText='You ran out of chips.';
+    title.innerText=aiName+' Wins'; sub.innerText='You ran out of chips.';
   }
   document.getElementById('match-overlay').classList.remove('hidden');
 }
@@ -836,7 +1051,6 @@ function eval5(cards){
   const cnt={}; ranks.forEach(r=>cnt[r]=(cnt[r]||0)+1);
   const freq=Object.values(cnt).sort((a,b)=>b-a);
   const fRanks=Object.keys(cnt).map(Number).sort((a,b)=>cnt[b]!==cnt[a]?cnt[b]-cnt[a]:b-a);
-
   let type=1,name='High Card';
   if(isStraight&&isFlush){type=9;name='Straight Flush';}
   else if(freq[0]===4){type=8;name='Four of a Kind';}
@@ -846,7 +1060,6 @@ function eval5(cards){
   else if(freq[0]===3){type=4;name='Three of a Kind';}
   else if(freq[0]===2&&freq[1]===2){type=3;name='Two Pair';}
   else if(freq[0]===2){type=2;name='One Pair';}
-
   let score=type*Math.pow(15,5);
   for(let i=0;i<fRanks.length;i++) score+=fRanks[i]*Math.pow(15,4-i);
   return {type,score,name};
@@ -855,41 +1068,30 @@ function eval5(cards){
 function descCards(cards){ return cards.map(c=>c.rank+SUITS[c.suit].c).join(' '); }
 
 // ============================================================
-// BOARD TEXTURE ANALYSIS
+// BOARD TEXTURE
 // ============================================================
 function analyzeBoardTexture(community){
   if(!community||community.length===0) return {dry:true,wet:false,paired:false,monotone:false,flushy:false,straighty:false,highCard:0,lowCard:0};
-  
   const ranks=community.map(c=>c.value).sort((a,b)=>b-a);
   const suits=community.map(c=>c.suit);
   const highCard=ranks[0], lowCard=ranks[ranks.length-1];
-
-  // Pairing
   const rankCnt={};
   ranks.forEach(r=>rankCnt[r]=(rankCnt[r]||0)+1);
   const paired=Object.values(rankCnt).some(v=>v>=2);
-  const trips=Object.values(rankCnt).some(v=>v>=3);
-
-  // Flush potential
   const suitCnt={};
   suits.forEach(s=>suitCnt[s]=(suitCnt[s]||0)+1);
   const maxSuit=Math.max(...Object.values(suitCnt));
   const monotone=maxSuit===3&&community.length===3;
   const flushy=maxSuit>=2;
-
-  // Straight potential
   const uniqueRanks=[...new Set(ranks)];
   let straightDraw=false;
   if(uniqueRanks.length>=2){
-    for(let i=0;i<uniqueRanks.length-1;i++){
-      if(uniqueRanks[i]-uniqueRanks[i+1]<=4) straightDraw=true;
-    }
+    for(let i=0;i<uniqueRanks.length-1;i++){ if(uniqueRanks[i]-uniqueRanks[i+1]<=4) straightDraw=true; }
   }
   const connected=uniqueRanks.length>=2&&(Math.max(...uniqueRanks)-Math.min(...uniqueRanks))<=4;
   const wet=flushy||connected||straightDraw;
   const dry=!flushy&&!connected&&!straightDraw;
-
-  return {dry,wet,paired,trips,monotone,flushy,straighty:connected||straightDraw,highCard,lowCard,suitCount:suitCnt};
+  return {dry,wet,paired,monotone,flushy,straighty:connected||straightDraw,highCard,lowCard,suitCount:suitCnt};
 }
 
 // ============================================================
@@ -903,7 +1105,6 @@ function estimateEquity(aiHole,community,iters){
   const rem=removeUsed(full,[...aiHole,...community]);
   const need=5-community.length;
   let wins=0,ties=0;
-
   for(let i=0;i<iters;i++){
     const pool=rem.slice();
     for(let k=pool.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
@@ -929,173 +1130,252 @@ function preflopStrength(hole){
   if(!pair){ if(gap===1)s+=1; else if(gap===2)s+=0.5; else if(gap>=4)s-=1.5; }
   return Math.max(0,Math.min(1,(s-3)/30));
 }
-
 function preflopEquity(hole){ return 0.32+preflopStrength(hole)*0.53; }
 
 // ============================================================
-// GTO AI ENGINE — ENHANCED WITH BOARD TEXTURE AWARENESS
+// ENHANCED GTO AI ENGINE
 // ============================================================
 
-// HU Preflop GTO charts (simplified, position-aware)
-// These encode opening/3bet/4bet/calling ranges based on HU GTO research
-const PREFLOP_GTO = {
-  // Min-raise frequency from button (SB) vs random hand
-  // Returns {raise:f, call:f, fold:f}
-  buttonAction(equity, facingBet, potOdds, mixRoll){
-    // HU button opens ~85-90% of hands (raise or limp)
-    // Simplified: raise most hands, fold bottom ~12%
-    if(facingBet<=0){
-      // Opening: raise 78%, limp 10%, fold 12%
-      if(equity>0.35) return {a:'RAISE',frac:0.55+Math.random()*0.15};
-      if(mixRoll<0.45) return {a:'RAISE',frac:0.66};
-      return {a:'FOLD'};
-    }
-    // Facing 3bet from BB
-    if(equity>0.68) return {a:mixRoll<0.65?'RAISE':'CALL'};
-    if(equity>0.50) return {a:'CALL'};
-    if(equity>0.40&&potOdds<0.28) return {a:'CALL'};
-    if(mixRoll<0.12) return {a:'RAISE',frac:2.5}; // 4bet bluff
-    return {a:'FOLD'};
-  },
+/*
+  GTO HU Preflop Strategy (research-based):
+  
+  HU GTO is built on these principles:
+  1. BTN/SB should open ~85-90% of hands (MDF-based)
+  2. BB defense: call or 3bet ~60-65% facing min-raise, never fold to min-raise with equity>pot odds
+  3. 3bet sizing: 3x OOP, 2.5x IP is standard
+  4. 4bet: ~16-20% of 3bet range, polarized (nuts + bluffs ~A2s-A5s type)
+  5. Calling ranges: BB defends wide, BTN calls 3bets with medium strength
+  
+  Preflop hand groups (HU context):
+  - Premium (AA,KK,QQ,JJ,AKs,AKo): equity ~0.80+
+  - Strong (TT-77,AQs-AJs,AQo,KQs): equity ~0.68-0.80
+  - Playable (66-22,ATo-A2o,A9s-A2s,KJo-KTo,KJs-K2s,QJs-Q2s): equity ~0.50-0.68
+  - Speculative (suited connectors, gappers): equity ~0.40-0.50
+  - Trash: equity <0.40
+*/
 
-  // BB action
-  bbAction(equity, facingBet, potOdds, mixRoll){
-    if(facingBet<=0){
-      // BB first to act preflop: check (can't raise from nothing here in HU)
-      return {a:'CALL'};
-    }
-    // Facing open raise from SB
-    const callOdds=facingBet/(G.pot+facingBet);
-    if(equity>0.65) return {a:mixRoll<0.55?'RAISE':'CALL', frac:3.0};
-    if(equity>0.48) return {a:'CALL'};
-    if(equity>callOdds+0.02) return {a:'CALL'};
-    if(mixRoll<0.08) return {a:'RAISE',frac:2.5}; // 3bet bluff
+// Improved preflop hand reading
+function handGroup(hole){
+  const v1=hole[0].value, v2=hole[1].value;
+  const hi=Math.max(v1,v2), lo=Math.min(v1,v2);
+  const suited=hole[0].suit===hole[1].suit;
+  const pair=v1===v2;
+  const gap=hi-lo;
+  const eq=preflopEquity(hole);
+
+  if(pair && hi>=11) return 'premium';       // JJ+
+  if(pair && hi>=8)  return 'strong';        // 88-TT
+  if(pair)           return 'playable';      // 22-77
+  if(hi===14 && lo>=13) return 'premium';   // AK
+  if(hi===14 && lo>=11 && suited) return 'premium'; // AQs+
+  if(hi===14 && lo>=10) return 'strong';    // AQo, AJs
+  if(hi===14)        return gap<=4?'playable':'marginal'; // Ax
+  if(hi>=12 && gap<=2 && suited) return 'strong'; // KQs, QJs type
+  if(hi>=12 && gap<=2) return 'playable';
+  if(suited && gap<=3 && hi>=7) return 'playable';
+  if(eq>=0.50) return 'playable';
+  if(eq>=0.43) return 'marginal';
+  return 'trash';
+}
+
+function computePreflopGTO(isButton, facingBet, mixRoll){
+  const hole = G.aiCards;
+  const group = handGroup(hole);
+  const eq = preflopEquity(hole);
+  const potOdds = facingBet>0 ? facingBet/(G.pot+facingBet) : 0;
+  const SB=G.currentSB, BB=G.currentBB;
+
+  // BTN/SB opens first
+  if(isButton && facingBet<=0){
+    // GTO BTN open range: 88% of hands. Fold bottom 12%
+    const foldThresh = { premium:0, strong:0, playable:0.05, marginal:0.4, trash:0.85 }[group];
+    if(mixRoll<foldThresh) return {a:'FOLD'};
+    // Raise sizing: 2.5x BB is GTO standard HU open
+    const raiseTo = 2.5*BB;
+    return {a:'RAISE', frac: raiseTo/G.pot || 0.6};
+  }
+
+  // BTN/SB facing 3bet from BB
+  if(isButton && facingBet>0){
+    // 4bet range: AA, KK, QQ, AK + bluffs (A5s,A4s type)
+    const is4betVal = group==='premium' && (hole[0].value>=13||hole[1].value>=13);
+    const is4betBluff = group==='strong' && suited && mixRoll<0.2;
+    if(is4betVal){ return {a:'RAISE', frac: 2.2}; } // 4bet to ~2.2x the 3bet
+    if(is4betBluff) return {a:'RAISE', frac:2.0};
+    // Call with: JJ-TT, AQo+, suited broadway
+    if(group==='strong') return {a:'CALL'};
+    if(group==='playable' && eq>potOdds) return {a:'CALL'};
     return {a:'FOLD'};
   }
-};
 
-// Board texture-aware postflop strategy
-function postflopStrategy(equity, texture, street, isIP, facingBet, pot, aiStack, mixRoll){
-  const inPot=pot; // pot size for sizing calc
-  const {dry,wet,paired,monotone,flushy,straighty,highCard} = texture;
+  // BB facing BTN open
+  if(!isButton && facingBet>0){
+    // BB 3bet range: ~30% of hands (GTO HU defense)
+    // 3bet value: AA-QQ, AK, + polarized bluffs
+    const is3betVal = ['premium'].includes(group) && mixRoll<0.6;
+    const is3betBluff = group==='playable' && mixRoll<0.12; // A2s-A5s type bluffs
+    const callPotOdds = facingBet/(G.pot+facingBet);
 
-  // IP = In Position (button acts last postflop)
-  // OOP = Out of Position
+    if(is3betVal) return {a:'RAISE', frac: 3.0}; // 3bet to 3x
+    if(is3betBluff) return {a:'RAISE', frac:2.8};
+    // Call: anything with equity > pot odds + some premium hands
+    if(group==='strong') return {a:'CALL'};
+    if(group==='playable' && eq>=callPotOdds-0.02) return {a:'CALL'};
+    if(group==='marginal' && eq>=callPotOdds+0.03) return {a:'CALL'};
+    // GTO BB should never fold to min-raise if equity >= pot odds
+    if(facingBet<=BB && eq>=callPotOdds-0.05) return {a:'CALL'};
+    return {a:'FOLD'};
+  }
+
+  // BB option (no raise, can check or raise)
+  if(!isButton && facingBet<=0){
+    // BB can raise as squeeze — ~20% in HU when checked to
+    if(group==='premium') return {a:'RAISE', frac:0.6};
+    if(group==='strong' && mixRoll<0.35) return {a:'RAISE', frac:0.5};
+    return {a:'CALL'}; // check
+  }
+
+  return {a:'CALL'};
+}
+
+/*
+  Postflop GTO principles:
+  1. Bet sizing: use 1/3, 2/3, or pot. Avoid in-between sizes.
+  2. Polarization: on wet boards, use larger sizes with polarized range
+  3. On dry boards: frequent small bets with wider range (protection + value)
+  4. IP advantage: check back more, realize equity; OOP: check-raise more
+  5. MDF (Minimum Defense Frequency): always defend enough to make villain's bluffs 0EV
+  6. C-bet frequency: ~55-70% on flop IP, ~45-55% OOP
+  7. Turn: reduce bluff freq, increase bet size with value
+  8. River: polarize fully, bet ~65% pot or larger with value
+*/
+
+function postflopGTO(equity, texture, street, isIP, facingBet, pot, aiStack, mixRoll){
+  const {dry,wet,paired,monotone,flushy,straighty,highCard}=texture;
+  const potOdds = facingBet>0 ? facingBet/(pot+facingBet) : 0;
 
   // Equity tiers
-  const nut=(equity>0.85);
-  const strong=(equity>0.68);
-  const medium=(equity>0.52);
-  const weak=(equity>0.38);
-  const marginal=(equity>0.25);
+  const tier = equity>=0.88?'nut': equity>=0.72?'strong': equity>=0.56?'medium': equity>=0.40?'weak': equity>=0.28?'marginal':'air';
 
-  // Sizing adjustments
-  // On wet boards: polarize (small or big), avoid medium
-  // On dry boards: can use medium sizing for protection/value
-  // IP: can check back more, delayed aggression
-  // OOP: check/raise more, protect range
+  // Board-aware betting frequencies
+  const streetMult = street==='FLOP'?1.0: street==='TURN'?0.9: 0.85; // less bluffing later
 
-  function size(frac){ return frac; }
+  // Bet sizing matrix by texture
+  function getBetSize(baseSize){
+    if(wet) return baseSize*(1.0+Math.random()*0.3);     // bigger on wet
+    if(dry) return baseSize*(0.75+Math.random()*0.2);   // smaller on dry
+    return baseSize;
+  }
 
   if(facingBet<=0){
-    // We have the option to bet or check
-    if(nut){
-      // Slowplay occasionally, especially on dry boards
-      const slowplayFreq = dry ? 0.25 : 0.08;
-      if(mixRoll<slowplayFreq) return {a:'CALL',s:0}; // check
-      const betSize = wet ? (mixRoll<0.5?0.33:0.75) : (0.5+Math.random()*0.25);
-      return {a:'RAISE',s:betSize};
-    }
-    if(strong){
-      const betFreq = isIP ? 0.62 : 0.55;
-      if(mixRoll<betFreq){
-        const betSize = dry ? 0.4+Math.random()*0.2 : 0.5+Math.random()*0.3;
-        return {a:'RAISE',s:betSize};
+    // Checking or betting
+    switch(tier){
+      case 'nut':{
+        // Slowplay less on wet boards (don't let draws get there free)
+        const slowFreq = wet?0.06:0.22;
+        if(mixRoll<slowFreq) return {a:'CALL'};
+        // Sizing: 2/3 pot on wet, 1/2 on dry
+        const sz = wet?(0.55+Math.random()*0.2):(0.4+Math.random()*0.15);
+        return {a:'RAISE',s:getBetSize(sz)};
       }
-      return {a:'CALL',s:0};
-    }
-    if(medium){
-      // Protection bets on wet boards, more checks on dry
-      const betFreq = wet ? 0.45 : (isIP ? 0.25 : 0.35);
-      if(mixRoll<betFreq){
-        const betSize = wet ? 0.55 : 0.4;
-        return {a:'RAISE',s:betSize};
+      case 'strong':{
+        const betFreq = isIP?(wet?0.72:0.55):(wet?0.65:0.48);
+        if(mixRoll<betFreq) return {a:'RAISE',s:getBetSize(wet?0.6:0.45)};
+        return {a:'CALL'};
       }
-      return {a:'CALL',s:0};
-    }
-    if(weak){
-      // Semi-bluff frequency depends on texture
-      const bluffFreq = wet ? (isIP?0.28:0.22) : (isIP?0.15:0.12);
-      const extraFreq = (street==='FLOP')?0.05:0; // more bluffs on flop
-      if(mixRoll<bluffFreq+extraFreq){
-        const betSize = 0.55+Math.random()*0.3; // semi-bluffs go bigger
-        return {a:'RAISE',s:betSize};
+      case 'medium':{
+        // Medium hands: protection on wet, thin value on dry
+        const betFreq = wet?(isIP?0.38:0.45):(isIP?0.28:0.35);
+        if(mixRoll<betFreq){
+          const sz = wet?0.55:0.38;
+          return {a:'RAISE',s:getBetSize(sz)};
+        }
+        return {a:'CALL'};
       }
-      return {a:'CALL',s:0};
+      case 'weak':{
+        // Semi-bluffs: draws, gutshots
+        const sfFreq = wet?(isIP?0.32:0.26):(isIP?0.12:0.10);
+        const adjFreq = sfFreq*streetMult;
+        if(mixRoll<adjFreq) return {a:'RAISE',s:getBetSize(wet?0.65:0.5)};
+        return {a:'CALL'};
+      }
+      case 'marginal':{
+        const bluffFreq = isIP?(dry?0.08:0.15):(dry?0.05:0.10);
+        const adj = bluffFreq*streetMult;
+        if(mixRoll<adj) return {a:'RAISE',s:getBetSize(0.6+Math.random()*0.25)};
+        return {a:'CALL'};
+      }
+      case 'air':{
+        // Pure bluffs: low freq, board-dependent
+        const pureBluff = isIP?(wet?0.18:0.08):(wet?0.12:0.05);
+        const adj = pureBluff*streetMult;
+        if(mixRoll<adj) return {a:'RAISE',s:getBetSize(0.7+Math.random()*0.3)};
+        return {a:'CALL'};
+      }
     }
-    // Marginal/air: pure bluff
-    const pureBluffFreq = isIP ? (dry?0.1:0.18) : (dry?0.06:0.12);
-    if(mixRoll<pureBluffFreq) return {a:'RAISE',s:0.66+Math.random()*0.34};
-    return {a:'CALL',s:0};
   }
 
   // Facing a bet
-  const potOdds=facingBet/(pot+facingBet);
-
-  if(nut){
-    const raiseFreq = isIP ? 0.65 : 0.7;
-    if(mixRoll<raiseFreq){
-      const betSize = wet ? 0.75+Math.random()*0.5 : 0.5+Math.random()*0.4;
-      return {a:'RAISE',s:betSize};
+  switch(tier){
+    case 'nut':{
+      // Raise for value, call to trap
+      const raiseFreq = isIP?(wet?0.55:0.45):(wet?0.65:0.55);
+      if(mixRoll<raiseFreq){
+        const sz = wet?0.8+Math.random()*0.6:0.6+Math.random()*0.4;
+        return {a:'RAISE',s:getBetSize(sz)};
+      }
+      return {a:'CALL'};
     }
-    return {a:'CALL'};
+    case 'strong':{
+      const raiseFreq = isIP?0.22:0.30;
+      if(mixRoll<raiseFreq) return {a:'RAISE',s:getBetSize(0.6)};
+      return {a:'CALL'};
+    }
+    case 'medium':{
+      // Call if equity covers pot odds with margin
+      if(equity>=potOdds+0.03) return {a:'CALL'};
+      return {a:'FOLD'};
+    }
+    case 'weak':{
+      // Semi-bluff raise or call with draws
+      if(equity>=potOdds-0.02) return {a:'CALL'};
+      const sfRaise = wet?(isIP?0.12:0.08):(isIP?0.05:0.03);
+      if(mixRoll<sfRaise*streetMult) return {a:'RAISE',s:0.8};
+      return {a:'FOLD'};
+    }
+    case 'marginal':{
+      if(equity>=potOdds) return {a:'CALL'};
+      return {a:'FOLD'};
+    }
+    case 'air':{
+      // Bluff raise: low freq
+      const brFreq = wet?(isIP?0.10:0.07):(isIP?0.04:0.03);
+      if(mixRoll<brFreq*streetMult) return {a:'RAISE',s:getBetSize(0.9)};
+      return {a:'FOLD'};
+    }
   }
-  if(strong){
-    const raiseFreq = isIP ? 0.28 : 0.35;
-    if(mixRoll<raiseFreq) return {a:'RAISE',s:0.55+Math.random()*0.2};
-    return {a:'CALL'};
-  }
-  if(medium){
-    if(equity>=potOdds) return {a:'CALL'};
-    return {a:'FOLD'};
-  }
-  if(weak){
-    // Semi-bluff raise sometimes
-    const sfReq = wet ? 0.18 : 0.08;
-    if(equity>=potOdds-0.04) return {a:'CALL'};
-    if(mixRoll<sfReq) return {a:'RAISE',s:0.75};
-    return {a:'FOLD'};
-  }
-  // Air facing bet
-  const bluffRaiseFreq=0.07+(wet?0.06:0)+(isIP?0.03:0);
-  if(mixRoll<bluffRaiseFreq) return {a:'RAISE',s:0.85};
-  if(facingBet/(pot||1)<0.2&&equity>potOdds-0.12) return {a:'CALL'};
   return {a:'FOLD'};
 }
 
 function computeAI(){
-  const isIP = G.dealerButton===1; // AI is button = in position postflop
+  const isIP = G.dealerButton===1;
   const isPreflop = G.currentStreet==='PREFLOP';
   const facingBet = G.playerBet - G.aiBet;
   const pot = G.pot;
   const aiStack = G.aiChips;
   const mixRoll = Math.random();
 
-  // Equity estimation
   let equity;
   if(isPreflop){
     equity=preflopEquity(G.aiCards);
   } else {
-    const iters = G.currentStreet==='RIVER'?320:(G.currentStreet==='TURN'?260:200);
+    const iters = G.currentStreet==='RIVER'?350:G.currentStreet==='TURN'?280:220;
     equity=estimateEquity(G.aiCards,G.communityCards,iters);
   }
 
-  const potOdds = facingBet>0 ? facingBet/(pot+facingBet) : 0;
-
-  // Max bet sizes
   const maxAiTotal=G.aiBet+aiStack;
   const maxPTotal=G.playerBet+G.playerChips;
-  const effMax=Math.min(maxAiTotal,maxAiTotal>maxPTotal?maxAiTotal:Math.min(maxAiTotal,maxPTotal));
+  const effMax=Math.min(maxAiTotal,maxPTotal);
 
   function raiseToAmt(potFrac){
     const potIfCalled=pot+Math.max(facingBet,0)*2;
@@ -1103,24 +1383,21 @@ function computeAI(){
     tgt=Math.round(tgt/G.currentBB)*G.currentBB;
     const minR=Math.max(G.playerBet,G.aiBet)+Math.max(G.lastRaiseInc,G.currentBB);
     tgt=Math.max(tgt,minR);
-    tgt=Math.min(tgt,effMax);
+    tgt=Math.min(tgt,maxAiTotal);
     return tgt;
   }
 
   if(isPreflop){
-    const isButton=G.dealerButton===1; // AI on button?
-    const result = isButton
-      ? PREFLOP_GTO.buttonAction(equity,facingBet,potOdds,mixRoll)
-      : PREFLOP_GTO.bbAction(equity,facingBet,potOdds,mixRoll);
-    if(result.a==='RAISE') return {type:'RAISE',amount:raiseToAmt(result.frac||0.6)};
-    if(result.a==='CALL') return {type:'CALL',amount:G.playerBet};
+    const isButton=G.dealerButton===1;
+    const res=computePreflopGTO(isButton,facingBet,mixRoll);
+    if(res.a==='RAISE') return {type:'RAISE',amount:raiseToAmt(res.frac||0.6)};
+    if(res.a==='CALL') return {type:'CALL',amount:G.playerBet};
     return {type:'FOLD',amount:0};
   }
 
-  // Postflop
   const texture=analyzeBoardTexture(G.communityCards);
-  const posBonus=isIP?0.04:-0.02;
-  const dec=postflopStrategy(equity+posBonus,texture,G.currentStreet,isIP,facingBet,pot,aiStack,mixRoll);
+  const posBonus=isIP?0.035:-0.015;
+  const dec=postflopGTO(equity+posBonus,texture,G.currentStreet,isIP,facingBet,pot,aiStack,mixRoll);
 
   if(dec.a==='RAISE') return {type:'RAISE',amount:raiseToAmt(dec.s||0.6)};
   if(dec.a==='CALL') return {type:'CALL',amount:G.playerBet};
@@ -1130,10 +1407,17 @@ function computeAI(){
 function aiThink(){
   if(!G.isHandActive||G.currentTurn!==1) return;
   document.getElementById('ai-status').innerText='Thinking…';
+
+  // AI timer
+  aiTimebankThink();
+  startTimer('ai', ()=>{}); // AI timer is decorative; AI auto-acts
+
   setTimeout(()=>{
+    clearTimer();
+    document.getElementById('ai-timer-wrap').style.display='none';
     const d=computeAI();
     executeAction(1,d.type,d.amount);
-  },600+Math.random()*600);
+  }, 700+Math.random()*800);
 }
 
 // ============================================================
@@ -1141,31 +1425,36 @@ function aiThink(){
 // ============================================================
 function cardHTML(card){
   const i=SUITS[card.suit];
-  return `<div class="card"><div class="r ${i.cl}">${card.rank}</div><div class="s ${i.cl}">${i.c}</div><div class="r rb ${i.cl}">${card.rank}</div></div>`;
+  return '<div class="card"><div class="r '+i.cl+'">'+card.rank+'</div><div class="s '+i.cl+'">'+i.c+'</div><div class="r rb '+i.cl+'">'+card.rank+'</div></div>';
 }
 function cardBack(){ return '<div class="card back"></div>'; }
 function cardPH(){ return '<div class="card ph"></div>'; }
 
 function updateUI(){
+  const BB = G.currentBB || BB_VAL;
+
   // Stacks
   document.getElementById('player-stack-amt').innerText=fc(G.playerChips);
-  document.getElementById('player-stack-bb').innerText=fbb(G.playerChips);
+  document.getElementById('player-stack-bb').innerText=fbb(G.playerChips, BB);
   document.getElementById('ai-stack-amt').innerText=fc(G.aiChips);
-  document.getElementById('ai-stack-bb').innerText=fbb(G.aiChips);
+  document.getElementById('ai-stack-bb').innerText=fbb(G.aiChips, BB);
 
   // Pot
   document.getElementById('pot-amt').innerText=fc(G.pot);
-  document.getElementById('pot-bb').innerText=fbb(G.pot);
+  document.getElementById('pot-bb').innerText=fbb(G.pot, BB);
 
   // Bets
-  document.getElementById('player-bet-txt').innerText=G.playerBet>0?fc(G.playerBet)+' ('+fbb(G.playerBet)+')':'—';
-  document.getElementById('ai-bet-txt').innerText=G.aiBet>0?fc(G.aiBet)+' ('+fbb(G.aiBet)+')':'—';
+  document.getElementById('player-bet-txt').innerText=G.playerBet>0?fc(G.playerBet)+' ('+fbb(G.playerBet,BB)+')':'—';
+  document.getElementById('ai-bet-txt').innerText=G.aiBet>0?fc(G.aiBet)+' ('+fbb(G.aiBet,BB)+')':'—';
 
   // Top pills
   document.getElementById('hand-counter-pill').innerText='Hand '+G.handNumber;
   document.getElementById('hand-badge').innerText='Hand #'+G.handNumber;
   document.getElementById('dealer-pill').innerText=G.dealerButton===0?'Dealer: You':'Dealer: AI';
   document.getElementById('blinds-pill').innerText=fc(G.currentSB)+'/'+fc(G.currentBB);
+
+  // AI name
+  document.getElementById('ai-seat-name').innerText=aiName;
 
   // Dealer pucks
   document.getElementById('player-dpuck').classList.toggle('hidden',G.dealerButton!==0);
@@ -1182,14 +1471,14 @@ function updateUI(){
   document.getElementById('board').innerHTML=boardHtml;
   document.getElementById('street-banner').innerText=(G.isHandActive||G.currentStreet==='SHOWDOWN')?G.currentStreet:'';
 
-  // Hand rank tag
+  // Hand rank
   const rt=document.getElementById('player-hand-rank');
   if(G.playerCards.length===2&&G.communityCards.length>=3){
     rt.innerText=eval7(G.playerCards,G.communityCards).name;
     rt.classList.remove('hidden');
   } else rt.classList.add('hidden');
 
-  // AI seat tag
+  // AI tag
   const at=document.getElementById('ai-tag');
   if(G.isHandActive){ at.innerText=G.dealerButton===1?'BTN/SB':'BB'; at.classList.remove('hidden'); }
   else at.classList.add('hidden');
@@ -1203,7 +1492,7 @@ function updateUI(){
   // Turn banner
   const tb=document.getElementById('turn-banner');
   if(pt){ tb.innerText='Your turn to act'; tb.classList.remove('waiting'); }
-  else if(ait){ tb.innerText='AI is acting…'; tb.classList.add('waiting'); }
+  else if(ait){ tb.innerText=aiName+' is acting…'; tb.classList.add('waiting'); }
   else { tb.innerText=G.currentStreet==='SHOWDOWN'?'Showdown — see history':'Dealing next hand…'; tb.classList.add('waiting'); }
 
   // Buttons
@@ -1233,16 +1522,14 @@ function updateUI(){
 window.updateSlider=function(val,labelOvr){
   const v=parseInt(val,10)||0;
   document.getElementById('raise-val').innerText=fc(v);
-  document.getElementById('raise-bb').innerText=fbb(v);
+  document.getElementById('raise-bb').innerText=fbb(v, G.currentBB);
   const br=document.getElementById('btn-raise');
   if(!br.disabled){
     const fb=G.aiBet-G.playerBet;
     const maxPT=G.playerBet+G.playerChips;
-    const isAI=v>=maxPT;
     const lbl=labelOvr||(fb>0?'Raise':'Bet');
-    br.innerHTML=(isAI?'All-In':'All-In'===lbl?lbl:lbl)+' <small>'+fc(v)+'</small>';
+    br.innerHTML=lbl+' <small>'+fc(v)+'</small>';
   }
-  // Update slider fill
   const sl=document.getElementById('raise-slider');
   if(sl.max>sl.min){
     const fill=((v-sl.min)/(sl.max-sl.min)*100).toFixed(1)+'%';
@@ -1272,13 +1559,35 @@ window.setSize=function(pct){
 function logDivider(t){ const b=document.getElementById('game-log'); b.innerHTML+='<div class="log-divider">'+t+'</div>'; b.scrollTop=b.scrollHeight; }
 function logStreet(n){ const b=document.getElementById('game-log'); b.innerHTML+='<div class="log-line street">'+n+'</div>'; b.scrollTop=b.scrollHeight; }
 function logLine(cls,html){ const b=document.getElementById('game-log'); b.innerHTML+='<div class="log-line '+cls+'">'+html+'</div>'; b.scrollTop=b.scrollHeight; }
-function logSystem(t){ logLine('sys',t); }
 function clearLog(){ document.getElementById('game-log').innerHTML=''; }
+
+// ============================================================
+// AI NAME MODAL
+// ============================================================
+window.openNameModal=function(){
+  document.getElementById('ai-name-input').value=aiName;
+  document.getElementById('name-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('ai-name-input').focus(),100);
+};
+window.closeNameModal=function(){
+  document.getElementById('name-modal').classList.add('hidden');
+};
+window.saveAiName=function(){
+  const v=document.getElementById('ai-name-input').value.trim();
+  if(v) aiName=v;
+  closeNameModal();
+  updateUI();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!document.getElementById('name-modal').classList.contains('hidden')) saveAiName();
+  if(e.key==='Escape'&&!document.getElementById('name-modal').classList.contains('hidden')) closeNameModal();
+});
 
 // ============================================================
 // NAVIGATION
 // ============================================================
 window.showModeScreen=function(){
+  clearTimer();
   document.getElementById('mode-screen').style.display='flex';
   document.getElementById('blind-banner').style.display='none';
 };
@@ -1287,6 +1596,7 @@ window.startMode=function(mode){
   document.getElementById('mode-screen').style.display='none';
   document.getElementById('match-overlay').classList.add('hidden');
   document.getElementById('hand-progress').style.display='none';
+  clearTimer();
 
   const cfg=MODES[mode];
   document.getElementById('mode-label').innerText=cfg.label;
@@ -1294,7 +1604,7 @@ window.startMode=function(mode){
 
   clearLog();
   initGame(mode);
-  logSystem('Mode: '+cfg.label+'. Stacks '+fc(cfg.startStack)+' ('+fbb(cfg.startStack)+').');
+  logLine('sys','Mode: '+cfg.label+'. Stacks '+fc(cfg.startStack)+' ('+fbb(cfg.startStack,BB_VAL)+').');
   startNewHand();
 };
 
@@ -1308,7 +1618,6 @@ window.restartCurrentMode=function(){
 // ============================================================
 window.onload=function(){
   document.getElementById('mode-screen').style.display='flex';
-  // Hide game elements until a mode is chosen
 };
 </script>
 </body>
